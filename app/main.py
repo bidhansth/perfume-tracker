@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.routers import perfumes
 
 app = FastAPI(
     title="Perfume Tracker",
@@ -10,3 +11,5 @@ app = FastAPI(
 def root():
     return {"status": "ok",
             "message": "Perfume Tracker is running"}
+
+app.include_router(perfumes.router)
