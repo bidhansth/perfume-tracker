@@ -5,7 +5,7 @@ from sqlalchemy import asc, desc
 
 from app.database import get_db
 from app.models import Perfume, Purchase
-from app.schemas import PerfumeCreate, PerfumeRead, PurchaseRead
+from app.schemas import PerfumeCreate, PerfumeRead, PurchaseRead, PaginatedResponse
 
 router = APIRouter(prefix="/perfumes", tags=["Perfumes"])
 
@@ -24,7 +24,7 @@ def create_perfume(perfume_in: PerfumeCreate, db: Session = Depends(get_db)):
     db.refresh(perfume)
     return perfume
 
-@router.get("", response_model=List[PerfumeRead])
+@router.get("", response_model=PaginatedResponse[PerfumeRead])
 def list_perfumes(
     available: Optional[bool] = Query(None),
     concentration: Optional[str] = Query(None),
@@ -32,11 +32,13 @@ def list_perfumes(
     brand: Optional[str] = Query(None),
     sort_by: Optional[str] = Query(None, description="Sort by: name, brand"),
     order: str = Query("asc", regex="^(asc|desc)$"),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
     ):
 
     perfumes = db.query(Perfume)
-    
+
     if available is not None:
         perfumes = perfumes.filter(Perfume.available == available)
     if concentration is not None:
@@ -45,6 +47,8 @@ def list_perfumes(
         perfumes = perfumes.filter(Perfume.season == season)
     if brand is not None:
         perfumes = perfumes.filter(Perfume.brand.ilike(f"%{brand}%"))
+
+    total = perfumes.count()
 
     allowed_sort_fields = {"name": Perfume.name, "brand": Perfume.brand}
 
@@ -58,7 +62,14 @@ def list_perfumes(
         column = allowed_sort_fields[sort_by]
         perfumes = perfumes.order_by(asc(column) if order == "asc" else desc(column))
 
-    return perfumes.all()
+    items = perfumes.offset(offset).limit(limit).all()
+
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": items
+    }
 
 @router.get("/{perfume_id}", response_model=PerfumeRead)
 def get_perfume(perfume_id: int, db: Session = Depends(get_db)):

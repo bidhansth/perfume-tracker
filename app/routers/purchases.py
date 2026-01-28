@@ -5,7 +5,7 @@ from datetime import date
 
 from app.database import get_db
 from app.models import Purchase, Perfume
-from app.schemas import PurchaseCreate, PurchaseRead
+from app.schemas import PurchaseCreate, PurchaseRead, PaginatedResponse
 
 router = APIRouter(prefix="/purchases", tags=["Purchases"])
 
@@ -30,12 +30,14 @@ def create_purchase(purchase_in: PurchaseCreate, db: Session = Depends(get_db)):
 
     return purchase
 
-@router.get("", response_model=List[PurchaseRead])
+@router.get("", response_model=PaginatedResponse[PurchaseRead])
 def list_purchases(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
     ):
 
@@ -55,7 +57,15 @@ def list_purchases(
     if min_price is not None and max_price is not None and min_price > max_price:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Minimum price cannot be greater than maximum price")
     
-    return purchases.all()
+    total = purchases.count()
+    items = purchases.offset(offset).limit(limit).all()
+
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": items
+    }
 
 @router.get("/{purchase_id}", response_model=PurchaseRead)
 def get_purchase(purchase_id: int, db: Session = Depends(get_db)):

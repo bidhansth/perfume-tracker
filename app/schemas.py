@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Optional, List, Generic, TypeVar
 from .models import Concentration, Season
 from datetime import date
 
@@ -41,4 +41,11 @@ class PurchaseRead(PurchaseBase):
     class Config:
         orm_mode = True
 
-        
+T = TypeVar('T')
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    total: int
+    limit: int
+    offset: int
+    items: List[T]
+    
