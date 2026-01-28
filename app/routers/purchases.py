@@ -65,3 +65,15 @@ def get_purchase(purchase_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase not found")
 
     return purchase
+
+@router.delete("/{purchase_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_purchase(purchase_id: int, db: Session = Depends(get_db)):
+    purchase = db.query(Purchase).filter(Purchase.id == purchase_id).first()
+
+    if not purchase:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase not found")
+
+    db.delete(purchase)
+    db.commit()
+
+    return purchase
