@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from .models import Concentration, Season
+from datetime import date
 
 class PerfumeBase(BaseModel):
     name: str
@@ -21,3 +22,23 @@ class PerfumeRead(PerfumeBase):
 class PerfumeList(BaseModel):
     items: List[PerfumeRead]
     total: int
+
+# purchase schemas
+
+class PurchaseBase(BaseModel):
+    perfume_id: int
+    date: date
+    price: float
+    store: str
+    ml: int = 100
+
+class PurchaseCreate(PurchaseBase):
+    pass
+
+class PurchaseRead(PurchaseBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
+        

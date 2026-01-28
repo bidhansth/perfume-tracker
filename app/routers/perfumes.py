@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.database import get_db
-from app.models import Perfume
-from app.schemas import PerfumeCreate, PerfumeRead
+from app.models import Perfume, Purchase
+from app.schemas import PerfumeCreate, PerfumeRead, PurchaseRead
 
 router = APIRouter(prefix="/perfumes", tags=["Perfumes"])
 
@@ -39,3 +39,15 @@ def get_perfume(perfume_id: int, db: Session = Depends(get_db)):
         )
 
     return perfume
+
+@router.get("/{perfume_id}/purchases", response_model=List[PurchaseRead])
+def get_perfume_purchases(perfume_id: int, db: Session = Depends(get_db)):
+    perfume = db.query(Perfume).filter(Perfume.id == perfume_id).first()
+
+    if not perfume:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Perfume not found"
+        )
+
+    return perfume.purchases
