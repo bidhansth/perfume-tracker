@@ -1,7 +1,33 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Generic, TypeVar
 from .models import Concentration, Season
 from datetime import date
+
+class UserBase(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50,)
+    email: EmailStr = Field(..., description="Email address")
+
+class UserCreate(UserBase):
+    password: str = Field(..., min_length=6, description="Password min 6 characters")
+
+class UserRead(UserBase):
+    id: int
+    is_active: bool
+    created_at: date
+
+    class Config:
+        orm_mode = True
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
 
 class PerfumeBase(BaseModel):
     name: str
@@ -15,6 +41,7 @@ class PerfumeCreate(PerfumeBase):
 
 class PerfumeRead(PerfumeBase):
     id: int
+    user_id: int
 
     class Config:
         orm_mode = True
@@ -37,6 +64,7 @@ class PurchaseCreate(PurchaseBase):
 
 class PurchaseRead(PurchaseBase):
     id: int
+    user_id: int
 
     class Config:
         orm_mode = True
@@ -48,4 +76,3 @@ class PaginatedResponse(BaseModel, Generic[T]):
     limit: int
     offset: int
     items: List[T]
-    

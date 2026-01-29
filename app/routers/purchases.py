@@ -3,21 +3,33 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 
+from app.auth import get_current_active_user
 from app.database import get_db
-from app.models import Purchase, Perfume
+from app.models import Purchase, Perfume, User
 from app.schemas import PurchaseCreate, PurchaseRead, PaginatedResponse
 
 router = APIRouter(prefix="/purchases", tags=["Purchases"])
 
 @router.post("", response_model=PurchaseRead, status_code=status.HTTP_201_CREATED)
-def create_purchase(purchase_in: PurchaseCreate, db: Session = Depends(get_db)):
+def create_purchase(
+    purchase_in: PurchaseCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+    ):
     perfume = db.query(Perfume).filter(Perfume.id == purchase_in.perfume_id).first()
 
     if not perfume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfume not found")
 
+    if perfume.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this perfume"
+        )
+
     purchase = Purchase(
         perfume_id=purchase_in.perfume_id,
+        user_id=current_user.id,
         date=purchase_in.date,
         price=purchase_in.price,
         store=purchase_in.store,
@@ -38,10 +50,12 @@ def list_purchases(
     max_price: Optional[float] = Query(None, ge=0),
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
     ):
 
     purchases = db.query(Purchase)
+    purchases = purchases.filter(Purchase.user_id == current_user.id)
 
     if start_date:
         purchases = purchases.filter(Purchase.date >= start_date)
@@ -68,21 +82,40 @@ def list_purchases(
     }
 
 @router.get("/{purchase_id}", response_model=PurchaseRead)
-def get_purchase(purchase_id: int, db: Session = Depends(get_db)):
+def get_purchase(
+    purchase_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+    ):
     purchase = db.query(Purchase).filter(Purchase.id == purchase_id).first()
 
     if not purchase:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase not found")
 
+    if purchase.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to access this purchase"
+        )
     return purchase
 
 @router.delete("/{purchase_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_purchase(purchase_id: int, db: Session = Depends(get_db)):
+def delete_purchase(
+    purchase_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+    ):
     purchase = db.query(Purchase).filter(Purchase.id == purchase_id).first()
 
     if not purchase:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase not found")
 
+    if purchase.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to delete this purchase"
+        )
+    
     db.delete(purchase)
     db.commit()
 
