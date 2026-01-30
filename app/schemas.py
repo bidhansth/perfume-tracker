@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional, List, Generic, TypeVar, Dict
 from .models import Concentration, Role, Season
 from datetime import date
@@ -16,9 +16,7 @@ class UserRead(UserBase):
     is_active: bool
     created_at: date
 
-    class Config:
-        orm_mode = True
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserLogin(BaseModel):
     username: str
@@ -48,16 +46,13 @@ class PerfumeCreate(PerfumeBase):
 class PerfumeRead(PerfumeBase):
     id: int
     user_id: int
-
-    class Config:
-        orm_mode = True
-        from_attributes = True
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class PerfumeReadAdmin(PerfumeRead):
     owner: UserRead
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PerfumeList(BaseModel):
     items: List[PerfumeRead]
@@ -79,15 +74,13 @@ class PurchaseRead(PurchaseBase):
     id: int
     user_id: int
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PurchaseReadAdmin(PurchaseRead):
     user: UserRead
     perfume: PerfumeRead
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 T = TypeVar('T')
 
@@ -108,23 +101,20 @@ class UserPerfumeCount(BaseModel):
     perfume_count: int
     user: UserRead
     
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class MostExpensivePurchase(BaseModel):
     price: float
     perfume: PerfumeRead
     user: UserRead
     
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class UserTotalSpent(BaseModel):
     total_spent: float
     user: UserRead
     
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TopUsersResponse(BaseModel):
     most_perfumes: Optional[List[UserPerfumeCount]]
