@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Literal, Optional
 from sqlalchemy import asc, desc
 
 from app.auth import get_current_active_user
@@ -37,7 +37,7 @@ def list_perfumes(
     season: Optional[str] = Query(None),
     brand: Optional[str] = Query(None),
     sort_by: Optional[str] = Query(None, description="Sort by: name, brand"),
-    order: str = Query("asc", regex="^(asc|desc)$"),
+    order: Literal["asc", "desc"] = Query("asc"),
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
