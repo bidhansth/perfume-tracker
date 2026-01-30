@@ -5,6 +5,10 @@ from sqlalchemy import Column, Integer, String, Float, Date, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
 from .database import Base
 
+class Role(str, Enum):
+    ADMIN = "ADMIN"
+    USER = "USER"
+
 class Concentration(str, Enum):
     EDC = "EDC"
     EDT = "EDT"
@@ -25,6 +29,7 @@ class User(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    role = Column(SQLEnum(Role, name="role"), default=Role.USER, nullable=False)
     is_active = Column(Boolean, default=True)
     created_at = Column(Date, default=date.today, nullable=False)
 

@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List, Generic, TypeVar
-from .models import Concentration, Season
+from typing import Optional, List, Generic, TypeVar, Dict
+from .models import Concentration, Role, Season
 from datetime import date
 
 class UserBase(BaseModel):
@@ -12,15 +12,21 @@ class UserCreate(UserBase):
 
 class UserRead(UserBase):
     id: int
+    role: Role
     is_active: bool
     created_at: date
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class UserLogin(BaseModel):
     username: str
     password: str
+
+class UserUpdate(BaseModel):
+    role: Optional[Role] = None
+    is_active: Optional[bool] = None
 
 class Token(BaseModel):
     access_token: str
@@ -42,6 +48,13 @@ class PerfumeCreate(PerfumeBase):
 class PerfumeRead(PerfumeBase):
     id: int
     user_id: int
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class PerfumeReadAdmin(PerfumeRead):
+    owner: UserRead
 
     class Config:
         orm_mode = True
@@ -69,6 +82,13 @@ class PurchaseRead(PurchaseBase):
     class Config:
         orm_mode = True
 
+class PurchaseReadAdmin(PurchaseRead):
+    user: UserRead
+    perfume: PerfumeRead
+
+    class Config:
+        orm_mode = True
+
 T = TypeVar('T')
 
 class PaginatedResponse(BaseModel, Generic[T]):
@@ -76,3 +96,37 @@ class PaginatedResponse(BaseModel, Generic[T]):
     limit: int
     offset: int
     items: List[T]
+
+class AdminDashboard(BaseModel):
+    total_users: int
+    total_perfumes: int
+    total_purchases: int
+    total_amount: float
+    active_users: int
+
+class UserPerfumeCount(BaseModel):
+    perfume_count: int
+    user: UserRead
+    
+    class Config:
+        orm_mode = True
+
+class MostExpensivePurchase(BaseModel):
+    price: float
+    perfume: PerfumeRead
+    user: UserRead
+    
+    class Config:
+        orm_mode = True
+
+class UserTotalSpent(BaseModel):
+    total_spent: float
+    user: UserRead
+    
+    class Config:
+        orm_mode = True
+
+class TopUsersResponse(BaseModel):
+    most_perfumes: Optional[List[UserPerfumeCount]]
+    most_expensive_purchase: Optional[List[MostExpensivePurchase]]
+    most_expensive_collection: Optional[List[UserTotalSpent]]

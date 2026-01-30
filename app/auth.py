@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from pydantic_settings import BaseSettings
 
 from app.database import get_db
-from app.models import User
+from app.models import Role, User
 import os
 
 class Settings(BaseSettings):
@@ -64,14 +64,21 @@ def get_current_user(
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
+        role_str: str = payload.get("role")
+
         if username is None:
             raise credentials_exception
+        try:
+            token_role = Role(role_str) if role_str else Role.USER
+        except ValueError:
+            token_role = Role.USER
     except JWTError:
         raise credentials_exception
     
     user = db.query(User).filter(User.username == username).first()
     if user is None:
         raise credentials_exception
+    user.role = token_role
     
     return user
 
@@ -80,4 +87,11 @@ def get_current_active_user(
         ) -> User:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+def get_current_admin_user(
+        current_user: User = Depends(get_current_active_user)
+        ) -> User:
+    if current_user.role != Role.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required.")
     return current_user

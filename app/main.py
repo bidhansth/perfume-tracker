@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.routers import perfumes, purchases, stats, auth
+from app.routers import perfumes, purchases, stats, auth, admin
 
 app = FastAPI(
     title="Perfume Tracker",
@@ -16,3 +16,4 @@ app.include_router(auth.router)
 app.include_router(perfumes.router)
 app.include_router(purchases.router)
 app.include_router(stats.router)
+app.include_router(admin.router)
