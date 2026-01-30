@@ -87,11 +87,13 @@ def get_current_active_user(
         ) -> User:
     if not current_user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+    if current_user.role != Role.USER:
+        raise HTTPException(status_code=403, detail="Not authorized to access this resource.")
     return current_user
 
 def get_current_admin_user(
-        current_user: User = Depends(get_current_active_user)
+        current_user: User = Depends(get_current_user)
         ) -> User:
-    if current_user.role != Role.ADMIN:
+    if current_user.role != Role.ADMIN or not current_user.is_active:
         raise HTTPException(status_code=403, detail="Admin access required.")
     return current_user

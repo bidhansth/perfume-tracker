@@ -7,10 +7,10 @@ from app.database import get_db
 from app.models import User
 from app.schemas import UserCreate, UserRead, Token
 from app.auth import (
+    get_current_user,
     get_password_hash,
     verify_password,
     create_access_token,
-    get_current_active_user,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
@@ -75,6 +75,6 @@ def login_user(
 
 @router.get("/me", response_model=UserRead)
 def read_users_me(
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(get_current_user)
     ):
     return current_user

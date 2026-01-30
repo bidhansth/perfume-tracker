@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, desc
 
 from app.database import get_db
-from app.models import User, Perfume, Purchase
+from app.models import User, Perfume, Purchase, Role
 from app.schemas import (
     PerfumeRead,
     UserRead,
@@ -22,11 +22,11 @@ def get_admin_dashboard(
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
     ):
-    total_users: int = db.query(func.count(User.id)).scalar()
+    total_users: int = db.query(func.count(User.id)).filter(User.role != Role.ADMIN).scalar()
     total_perfumes: int = db.query(func.count(Perfume.id)).scalar()
     total_purchases: int = db.query(func.count(Purchase.id)).scalar()
     total_amount: float = db.query(func.coalesce(func.sum(Purchase.price), 0.0)).scalar()
-    active_users: int = db.query(func.count(User.id)).filter(User.is_active == True).scalar()
+    active_users: int = db.query(func.count(User.id)).filter(User.is_active == True).filter(User.role != Role.ADMIN).scalar()
 
     return AdminDashboard(
         total_users=total_users or 0,
@@ -75,7 +75,7 @@ def get_top_users(
                 user=UserRead.model_validate(item[2])
             ) for item in most_expensive_perfume
         ] if most_expensive_perfume else None,
-        
+
         most_expensive_collection=[
             UserTotalSpent(
                 total_spent=item[1],
