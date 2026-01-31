@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Literal, Optional
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, func, select
 
 from app.auth import get_current_active_user
 from app.database import get_db
@@ -44,19 +44,19 @@ def list_perfumes(
     current_user: User = Depends(get_current_active_user)
     ):
 
-    perfumes = db.query(Perfume)
-    perfumes = perfumes.filter(Perfume.user_id == current_user.id)
+    stmt = select(Perfume).where(Perfume.user_id == current_user.id)
 
     if available is not None:
-        perfumes = perfumes.filter(Perfume.available == available)
+        stmt = stmt.where(Perfume.available == available)
     if concentration is not None:
-        perfumes = perfumes.filter(Perfume.concentration == concentration)
+        stmt = stmt.where(Perfume.concentration == concentration)
     if season is not None:
-        perfumes = perfumes.filter(Perfume.season == season)
+        stmt = stmt.where(Perfume.season == season)
     if brand is not None:
-        perfumes = perfumes.filter(Perfume.brand.ilike(f"%{brand}%"))
+        stmt = stmt.where(Perfume.brand.ilike(f"%{brand}%"))
 
-    total = perfumes.count()
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total = db.execute(count_stmt).scalar_one()
 
     allowed_sort_fields = {"name": Perfume.name, "brand": Perfume.brand}
     if sort_by:
@@ -67,9 +67,10 @@ def list_perfumes(
             )
         
         column = allowed_sort_fields[sort_by]
-        perfumes = perfumes.order_by(asc(column) if order == "asc" else desc(column))
+        stmt = stmt.order_by(column.asc() if order == "asc" else column.desc())
 
-    items = perfumes.offset(offset).limit(limit).all()
+    stmt = stmt.offset(offset).limit(limit)
+    items = db.execute(stmt).scalars().all()
 
     return {
         "total": total,
