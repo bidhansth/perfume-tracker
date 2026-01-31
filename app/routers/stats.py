@@ -2,7 +2,7 @@ from typing import List, Optional
 from datetime import date
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, select
 
 from app.auth import get_current_active_user
 from app.database import get_db
@@ -18,21 +18,20 @@ def spending_stats(
     current_user: User = Depends(get_current_active_user)
     ):
 
-    spending_stats = db.query(
+    stmt = select(
         func.sum(Purchase.price).label("total_spent"),
-        func.count(Purchase.id).label("total_purchases"),
+        func.sum(Purchase.id).label("total_purchases"),
         func.avg(Purchase.price).label("average_price")
-    )
-    spending_stats = spending_stats.filter(Purchase.user_id == current_user.id)
+        ).where(Purchase.user_id == current_user.id)
 
     if start_date:
-        spending_stats = spending_stats.filter(Purchase.date >= start_date)
+        stmt = stmt.where(Purchase.date >= start_date)
     if end_date:
-        spending_stats = spending_stats.filter(Purchase.date <= end_date)
+        stmt = stmt.where(Purchase.date <= end_date)
     if start_date and end_date and start_date > end_date:
         raise HTTPException(status_code=400, detail="Start date cannot be after end date")
 
-    result = spending_stats.one()
+    result = db.execute(stmt).one()
 
     return {
         "total_spent": result.total_spent or 0,
@@ -47,11 +46,13 @@ def most_expensive(
     current_user: User = Depends(get_current_active_user)
     ):
 
-    most_expensive = db.query(Perfume.name, Perfume.brand, Purchase.price, Purchase.date).\
+    stmt = select(Perfume.name, Perfume.brand, Purchase.price, Purchase.date).\
         join(Purchase, Perfume.id == Purchase.perfume_id).\
-        filter(Purchase.user_id == current_user.id).\
+        where(Purchase.user_id == current_user.id).\
         order_by(desc(Purchase.price)).\
-        limit(num).all()
+        limit(num)
+    most_expensive = db.execute(stmt).all()
+
     
     return [
         {

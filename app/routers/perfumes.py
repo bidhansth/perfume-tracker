@@ -85,7 +85,8 @@ def get_perfume(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
-    perfume = db.query(Perfume).filter(Perfume.id == perfume_id).first()
+    stmt = select(Perfume).where(Perfume.id == perfume_id)
+    perfume = db.execute(stmt).scalars().first()
 
     if not perfume:
         raise HTTPException(
@@ -107,7 +108,8 @@ def get_perfume_purchases(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
-    perfume = db.query(Perfume).filter(Perfume.id == perfume_id).first()
+    stmt = select(Perfume).where(Perfume.id == perfume_id)
+    perfume = db.execute(stmt).scalars().first()
 
     if not perfume:
         raise HTTPException(

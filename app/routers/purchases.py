@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -16,7 +17,8 @@ def create_purchase(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
-    perfume = db.query(Perfume).filter(Perfume.id == purchase_in.perfume_id).first()
+    stmt = select(Perfume).where(Perfume.id == purchase_in.perfume_id)
+    perfume = db.execute(stmt).scalars().first()
 
     if not perfume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfume not found")
@@ -54,25 +56,26 @@ def list_purchases(
     current_user: User = Depends(get_current_active_user)
     ):
 
-    purchases = db.query(Purchase)
-    purchases = purchases.filter(Purchase.user_id == current_user.id)
+    stmt = select(Purchase).where(Purchase.user_id == current_user.id)
 
     if start_date:
-        purchases = purchases.filter(Purchase.date >= start_date)
+        stmt = stmt.where(Purchase.date >= start_date)
     if end_date:
-        purchases = purchases.filter(Purchase.date <= end_date)
+        stmt = stmt.where(Purchase.date <= end_date)
     if start_date and end_date and start_date > end_date:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Start date cannot be after end date")
     
     if min_price is not None:
-        purchases = purchases.filter(Purchase.price >= min_price)
+        stmt = stmt.where(Purchase.price >= min_price)
     if max_price is not None:
-        purchases = purchases.filter(Purchase.price <= max_price)
+        stmt = stmt.where(Purchase.price <= max_price)
     if min_price is not None and max_price is not None and min_price > max_price:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Minimum price cannot be greater than maximum price")
     
-    total = purchases.count()
-    items = purchases.offset(offset).limit(limit).all()
+    total_stmt = select(func.count()).select_from(stmt.subquery())
+    total = db.execute(total_stmt).scalar_one()
+
+    items = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
 
     return {
         "total": total,
@@ -87,7 +90,8 @@ def get_purchase(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
-    purchase = db.query(Purchase).filter(Purchase.id == purchase_id).first()
+    stmt = select(Purchase).where(Purchase.id == purchase_id)
+    purchase = db.execute(stmt).scalar_one()
 
     if not purchase:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase not found")
@@ -105,7 +109,8 @@ def delete_purchase(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
-    purchase = db.query(Purchase).filter(Purchase.id == purchase_id).first()
+    stmt = select(Purchase).where(Purchase.id == purchase_id)
+    purchase = db.execute(stmt).scalar_one()
 
     if not purchase:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase not found")
