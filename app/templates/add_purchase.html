@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Add Purchase - Perfume Tracker{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Add New Purchase</h1>
+    <form id="purchase-form" class="perfume-form">
+        <div class="form-group">
+            <label for="perfume_id">Perfume</label>
+            <select id="perfume_id" name="perfume_id" required>
+                <option value="">Loading perfumes...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="date">Date</label>
+            <input type="date" id="date" name="date" required>
+        </div>
+        <div class="form-group">
+            <label for="store">Store</label>
+            <input type="text" id="store" name="store" required>
+        </div>
+        <div class="form-group">
+            <label for="ml">Size (ml)</label>
+            <input type="number" id="ml" name="ml" value="100" min="1" required>
+        </div>
+        <div class="form-group">
+            <label for="price">Price ($)</label>
+            <input type="number" id="price" name="price" step="0.01" min="0" required>
+        </div>
+        <div class="error-message" id="error-message"></div>
+        <div class="form-actions">
+            <a href="/app/purchases" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Add Purchase</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (!requireRole(['USER'])) {
+        // Will redirect
+    } else {
+        loadPerfumes();
+    }
+
+    // Set today's date as default
+    document.getElementById('date').value = new Date().toISOString().split('T')[0];
+
+    // Load perfumes for dropdown
+    async function loadPerfumes() {
+        const response = await apiRequest('/perfumes?limit=100');
+        if (response.ok) {
+            const data = await response.json();
+            const select = document.getElementById('perfume_id');
+            if (data.items.length === 0) {
+                select.innerHTML = '<option value="">No perfumes - add one first</option>';
+            } else {
+                select.innerHTML = data.items.map(p => 
+                    `<option value="${p.id}">${escapeHtml(p.name)} - ${escapeHtml(p.brand)}</option>`
+                ).join('');
+            }
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    document.getElementById('purchase-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = {
+            perfume_id: parseInt(formData.get('perfume_id')),
+            date: formData.get('date'),
+            store: formData.get('store'),
+            ml: parseInt(formData.get('ml')),
+            price: parseFloat(formData.get('price'))
+        };
+        
+        try {
+            const response = await apiRequest('/purchases', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                window.location.href = '/app/purchases';
+            } else {
+                const error = await response.json();
+                document.getElementById('error-message').textContent = error.detail || 'Failed to add purchase';
+            }
+        } catch (err) {
+            document.getElementById('error-message').textContent = 'Connection error';
+        }
+    });
+
+    loadPerfumes();
+</script>
+{% endblock %}

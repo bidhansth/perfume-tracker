@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Add Perfume - Perfume Tracker{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h1>Add New Perfume</h1>
+    <form id="perfume-form" class="perfume-form">
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div class="form-group">
+            <label for="brand">Brand</label>
+            <input type="text" id="brand" name="brand" required>
+        </div>
+        <div class="form-group">
+            <label for="concentration">Concentration</label>
+            <select id="concentration" name="concentration" required>
+                <option value="EDC">EDC (Eau de Cologne)</option>
+                <option value="EDT">EDT (Eau de Toilette)</option>
+                <option value="EDP" selected>EDP (Eau de Parfum)</option>
+                <option value="PARFUM">Parfum</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="season">Season</label>
+            <select id="season" name="season" required>
+                <option value="SUMMER">Summer</option>
+                <option value="WINTER">Winter</option>
+                <option value="ALL" selected>All Seasons</option>
+                <option value="OTHER">Other</option>
+            </select>
+        </div>
+        <div class="form-group checkbox">
+            <label>
+                <input type="checkbox" id="available" name="available" checked>
+                Available
+            </label>
+        </div>
+        <div class="error-message" id="error-message"></div>
+        <div class="form-actions">
+            <a href="/app/perfumes" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Add Perfume</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (!requireRole(['USER'])) {
+        // Will redirect
+    }
+
+    document.getElementById('perfume-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = {
+            name: formData.get('name'),
+            brand: formData.get('brand'),
+            concentration: formData.get('concentration'),
+            season: formData.get('season'),
+            available: document.getElementById('available').checked
+        };
+        
+        try {
+            const response = await apiRequest('/perfumes', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            
+            if (response.ok) {
+                window.location.href = '/app/perfumes';
+            } else {
+                const error = await response.json();
+                document.getElementById('error-message').textContent = error.detail || 'Failed to add perfume';
+            }
+        } catch (err) {
+            document.getElementById('error-message').textContent = 'Connection error';
+        }
+    });
+</script>
+{% endblock %}

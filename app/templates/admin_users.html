@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Users - Perfume Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Manage Users</h1>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="users-table">
+            <tr><td colspan="7" class="loading">Loading users...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (!requireRole(['ADMIN'])) {
+        // Will redirect
+    } else {
+        loadUsers();
+    }
+
+    async function loadUsers() {
+        try {
+            const response = await apiRequest('/admin/users');
+            if (response.ok) {
+                const users = await response.json();
+                renderUsers(users);
+            } else {
+                document.getElementById('users-table').innerHTML = '<tr><td colspan="7" class="error">Failed to load users</td></tr>';
+            }
+        } catch (err) {
+            document.getElementById('users-table').innerHTML = '<tr><td colspan="7" class="error">Failed to load users</td></tr>';
+        }
+    }
+
+    function renderUsers(users) {
+        const tbody = document.getElementById('users-table');
+        if (users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty">No users found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = users.map(u => `
+            <tr>
+                <td>${u.id}</td>
+                <td>${escapeHtml(u.username)}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td><span class="tag ${u.role === 'ADMIN' ? 'tag-admin' : ''}">${u.role}</span></td>
+                <td>${u.is_active ? '✓ Active' : '✗ Inactive'}</td>
+                <td>${u.created_at}</td>
+                <td>
+                    <button onclick="toggleActive(${u.id}, ${!u.is_active})" class="btn-small">
+                        ${u.is_active ? 'Deactivate' : 'Activate'}
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    async function toggleActive(userId, newStatus) {
+        const response = await apiRequest(`/admin/users/${userId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ is_active: newStatus })
+        });
+        if (response.ok) {
+            loadUsers();
+        }
+    }
+</script>
+{% endblock %}

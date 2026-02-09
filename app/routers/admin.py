@@ -83,3 +83,34 @@ def get_top_users(
             ) for item in most_expensive_collection
         ] if most_expensive_collection else None
     )
+
+
+@router.get("/users", response_model=list[UserRead])
+def list_users(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user)
+):
+    users = db.query(User).all()
+    return users
+
+
+@router.patch("/users/{user_id}", response_model=UserRead)
+def update_user(
+    user_id: int,
+    user_update: dict,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_current_admin_user)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if "is_active" in user_update:
+        user.is_active = user_update["is_active"]
+    if "role" in user_update:
+        user.role = Role(user_update["role"])
+    
+    db.commit()
+    db.refresh(user)
+    return user

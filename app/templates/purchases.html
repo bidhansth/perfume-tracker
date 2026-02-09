@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Purchases - Perfume Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My Purchases</h1>
+    <a href="/app/purchases/add" class="btn btn-primary">+ Add Purchase</a>
+</div>
+
+<div class="table-container">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Perfume</th>
+                <th>Store</th>
+                <th>Size</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="purchases-table">
+            <tr><td colspan="6" class="loading">Loading purchases...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let perfumesMap = {};
+
+    if (!requireRole(['USER'])) {
+        // Will redirect
+    } else {
+        loadData();
+    }
+
+    async function loadData() {
+        // Load perfumes first to get names
+        const perfumesRes = await apiRequest('/perfumes?limit=100');
+        if (perfumesRes.ok) {
+            const data = await perfumesRes.json();
+            data.items.forEach(p => perfumesMap[p.id] = p.name);
+        }
+
+        // Load purchases
+        const response = await apiRequest('/purchases?limit=50');
+        if (response.ok) {
+            const data = await response.json();
+            renderPurchases(data.items);
+        }
+    }
+
+    function renderPurchases(purchases) {
+        const tbody = document.getElementById('purchases-table');
+        if (purchases.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty">No purchases yet</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = purchases.map(p => `
+            <tr>
+                <td>${p.date}</td>
+                <td>${escapeHtml(perfumesMap[p.perfume_id] || 'Unknown')}</td>
+                <td>${escapeHtml(p.store)}</td>
+                <td>${p.ml}ml</td>
+                <td>$${p.price.toFixed(2)}</td>
+                <td>
+                    <button onclick="deletePurchase(${p.id})" class="btn-delete">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    async function deletePurchase(id) {
+        if (!confirm('Delete this purchase?')) return;
+        
+        const response = await apiRequest(`/purchases/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            loadData();
+        }
+    }
+</script>
+{% endblock %}

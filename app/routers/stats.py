@@ -20,7 +20,7 @@ def spending_stats(
 
     stmt = select(
         func.sum(Purchase.price).label("total_spent"),
-        func.sum(Purchase.id).label("total_purchases"),
+        func.count(Purchase.id).label("total_purchases"),
         func.avg(Purchase.price).label("average_price")
         ).where(Purchase.user_id == current_user.id)
 

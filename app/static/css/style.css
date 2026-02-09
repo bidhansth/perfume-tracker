@@ -1,0 +1,498 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Navbar */
+.navbar {
+    background: #2c3e50;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-brand a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.nav-links, .nav-auth {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.nav-links a, .nav-auth a {
+    color: #ecf0f1;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.nav-links a:hover, .nav-auth a:hover {
+    color: #3498db;
+}
+
+.btn-logout {
+    background: #e74c3c;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-logout:hover {
+    background: #c0392b;
+    color: white !important;
+}
+
+/* Container */
+.container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.btn-delete {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-delete:hover {
+    background: #c0392b;
+}
+
+/* Auth Pages */
+.auth-container {
+    max-width: 400px;
+    margin: 4rem auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.auth-container h1 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+}
+
+.auth-form .form-group {
+    margin-bottom: 1rem;
+}
+
+.auth-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+.auth-form input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.auth-form input:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.auth-form .btn {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.auth-link {
+    text-align: center;
+    margin-top: 1rem;
+    color: #666;
+}
+
+.auth-link a {
+    color: #3498db;
+}
+
+.error-message {
+    color: #e74c3c;
+    text-align: center;
+    margin-top: 0.5rem;
+    min-height: 1.5rem;
+}
+
+/* Page Header */
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    color: #2c3e50;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filters select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9rem;
+    min-width: 150px;
+}
+
+/* Perfume Grid */
+.perfume-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.perfume-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.perfume-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.perfume-card.unavailable {
+    opacity: 0.7;
+    border-left: 4px solid #e74c3c;
+}
+
+.perfume-card h3 {
+    color: #2c3e50;
+    margin-bottom: 0.25rem;
+}
+
+.perfume-card .brand {
+    color: #7f8c8d;
+    margin-bottom: 1rem;
+}
+
+.tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.tag {
+    background: #ecf0f1;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #2c3e50;
+}
+
+.status {
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.perfume-card .actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* Form Container */
+.form-container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.form-container h1 {
+    margin-bottom: 1.5rem;
+    color: #2c3e50;
+}
+
+.perfume-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.perfume-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.perfume-form input,
+.perfume-form select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.perfume-form input:focus,
+.perfume-form select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+.perfume-form .checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.perfume-form .checkbox input {
+    width: auto;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+}
+
+/* Table */
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    background: white;
+    border-collapse: collapse;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.data-table th,
+.data-table td {
+    padding: 1rem;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.data-table th {
+    background: #2c3e50;
+    color: white;
+    font-weight: 500;
+}
+
+.data-table tr:hover {
+    background: #f8f9fa;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.stat-value {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #3498db;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Utility */
+.loading, .empty, .error {
+    text-align: center;
+    padding: 2rem;
+    color: #7f8c8d;
+}
+
+.error {
+    color: #e74c3c;
+}
+
+.alert {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+/* Admin Styles */
+.admin-sections {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.admin-section {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.admin-section h2 {
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 0.5rem;
+}
+
+.top-list {
+    list-style: none;
+    padding: 0;
+    counter-reset: rank;
+}
+
+.top-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #eee;
+    counter-increment: rank;
+}
+
+.top-list li::before {
+    content: counter(rank) ".";
+    font-weight: bold;
+    color: #3498db;
+    margin-right: 0.5rem;
+}
+
+.top-list li:last-child {
+    border-bottom: none;
+}
+
+.tag-admin {
+    background: #e74c3c;
+    color: white;
+}
+
+.btn-small {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background: #3498db;
+    color: white;
+}
+
+.btn-small:hover {
+    background: #2980b9;
+}
+
+.nav-admin {
+    display: flex;
+    gap: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .nav-links, .nav-auth, .nav-user, .nav-admin {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+    
+    .filters {
+        flex-direction: column;
+    }
+    
+    .filters select {
+        width: 100%;
+    }
+}

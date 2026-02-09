@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}My Perfumes - Perfume Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>My Perfumes</h1>
+    <a href="/app/perfumes/add" class="btn btn-primary">+ Add Perfume</a>
+</div>
+
+<div class="filters">
+    <select id="filter-concentration">
+        <option value="">All Concentrations</option>
+        <option value="EDC">EDC</option>
+        <option value="EDT">EDT</option>
+        <option value="EDP">EDP</option>
+        <option value="PARFUM">Parfum</option>
+        <option value="OTHER">Other</option>
+    </select>
+    <select id="filter-season">
+        <option value="">All Seasons</option>
+        <option value="SUMMER">Summer</option>
+        <option value="WINTER">Winter</option>
+        <option value="ALL">All Seasons</option>
+        <option value="OTHER">Other</option>
+    </select>
+    <select id="filter-available">
+        <option value="">All Status</option>
+        <option value="true">Available</option>
+        <option value="false">Unavailable</option>
+    </select>
+</div>
+
+<div class="perfume-grid" id="perfume-grid">
+    <p class="loading">Loading perfumes...</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (!requireRole(['USER'])) {
+        // Will redirect
+    } else {
+        loadPerfumes();
+    }
+
+    async function loadPerfumes() {
+        const concentration = document.getElementById('filter-concentration').value;
+        const season = document.getElementById('filter-season').value;
+        const available = document.getElementById('filter-available').value;
+        
+        let url = '/perfumes?limit=50';
+        if (concentration) url += `&concentration=${concentration}`;
+        if (season) url += `&season=${season}`;
+        if (available) url += `&available=${available}`;
+        
+        try {
+            const response = await apiRequest(url);
+            if (response.ok) {
+                const data = await response.json();
+                renderPerfumes(data.items);
+            }
+        } catch (err) {
+            document.getElementById('perfume-grid').innerHTML = '<p class="error">Failed to load perfumes</p>';
+        }
+    }
+
+    function renderPerfumes(perfumes) {
+        const grid = document.getElementById('perfume-grid');
+        if (perfumes.length === 0) {
+            grid.innerHTML = '<p class="empty">No perfumes found. Add your first one!</p>';
+            return;
+        }
+        
+        grid.innerHTML = perfumes.map(p => `
+            <div class="perfume-card ${p.available ? '' : 'unavailable'}">
+                <h3>${escapeHtml(p.name)}</h3>
+                <p class="brand">${escapeHtml(p.brand)}</p>
+                <div class="tags">
+                    <span class="tag">${p.concentration}</span>
+                    <span class="tag">${p.season}</span>
+                </div>
+                <div class="status">${p.available ? '✓ Available' : '✗ Unavailable'}</div>
+                <div class="actions">
+                    <button onclick="deletePerfume(${p.id})" class="btn-delete">Delete</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    async function deletePerfume(id) {
+        if (!confirm('Delete this perfume?')) return;
+        
+        const response = await apiRequest(`/perfumes/${id}`, { method: 'DELETE' });
+        if (response.ok) {
+            loadPerfumes();
+        }
+    }
+
+    document.getElementById('filter-concentration').addEventListener('change', loadPerfumes);
+    document.getElementById('filter-season').addEventListener('change', loadPerfumes);
+    document.getElementById('filter-available').addEventListener('change', loadPerfumes);
+</script>
+{% endblock %}

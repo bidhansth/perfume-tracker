@@ -1,5 +1,7 @@
 from fastapi import FastAPI
-from app.routers import perfumes, purchases, stats, auth, admin
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
+from app.routers import perfumes, purchases, stats, auth, admin, views
 
 app = FastAPI(
     title="Perfume Tracker",
@@ -7,11 +9,13 @@ app = FastAPI(
     description="Track my perfume collection and purchases"
 )
 
-@app.get('/')
-def root():
-    return {"status": "ok",
-            "message": "Perfume Tracker is running"}
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
+@app.get("/")
+def root():
+    return RedirectResponse(url="/app/login")
+
+app.include_router(views.router)
 app.include_router(auth.router)
 app.include_router(perfumes.router)
 app.include_router(purchases.router)

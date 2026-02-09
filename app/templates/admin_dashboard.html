@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Perfume Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Admin Dashboard</h1>
+</div>
+
+<div class="stats-grid" id="stats-grid">
+    <p class="loading">Loading dashboard...</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (!requireRole(['ADMIN'])) {
+        // Will redirect
+    } else {
+        loadDashboard();
+    }
+
+    async function loadDashboard() {
+        try {
+            const response = await apiRequest('/admin/stats/dashboard');
+            if (response.ok) {
+                const data = await response.json();
+                renderDashboard(data);
+            } else {
+                document.getElementById('stats-grid').innerHTML = '<p class="error">Failed to load dashboard</p>';
+            }
+        } catch (err) {
+            document.getElementById('stats-grid').innerHTML = '<p class="error">Failed to load dashboard</p>';
+        }
+    }
+
+    function renderDashboard(data) {
+        const grid = document.getElementById('stats-grid');
+        grid.innerHTML = `
+            <div class="stat-card">
+                <span class="stat-value">${data.total_users}</span>
+                <span class="stat-label">Total Users</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">${data.active_users}</span>
+                <span class="stat-label">Active Users</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">${data.total_perfumes}</span>
+                <span class="stat-label">Total Perfumes</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">${data.total_purchases}</span>
+                <span class="stat-label">Total Purchases</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">$${data.total_amount.toFixed(2)}</span>
+                <span class="stat-label">Total Revenue</span>
+            </div>
+        `;
+    }
+</script>
+{% endblock %}

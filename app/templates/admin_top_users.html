@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Top Users - Perfume Tracker{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Top Users</h1>
+</div>
+
+<div class="admin-sections">
+    <section class="admin-section">
+        <h2>Most Perfumes</h2>
+        <div id="most-perfumes" class="loading">Loading...</div>
+    </section>
+
+    <section class="admin-section">
+        <h2>Most Expensive Purchases</h2>
+        <div id="most-expensive" class="loading">Loading...</div>
+    </section>
+
+    <section class="admin-section">
+        <h2>Highest Total Spent</h2>
+        <div id="highest-spent" class="loading">Loading...</div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (!requireRole(['ADMIN'])) {
+        // Will redirect
+    } else {
+        loadTopUsers();
+    }
+
+    async function loadTopUsers() {
+        try {
+            const response = await apiRequest('/admin/stats/top-users?limit=5');
+            if (response.ok) {
+                const data = await response.json();
+                renderTopUsers(data);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function renderTopUsers(data) {
+        // Most Perfumes
+        const perfumesDiv = document.getElementById('most-perfumes');
+        if (data.most_perfumes && data.most_perfumes.length > 0) {
+            perfumesDiv.innerHTML = `
+                <ol class="top-list">
+                    ${data.most_perfumes.map(item => `
+                        <li>
+                            <strong>${escapeHtml(item.user.username)}</strong>
+                            <span class="tag">${item.perfume_count} perfumes</span>
+                        </li>
+                    `).join('')}
+                </ol>
+            `;
+        } else {
+            perfumesDiv.innerHTML = '<p class="empty">No data</p>';
+        }
+
+        // Most Expensive Purchases
+        const expensiveDiv = document.getElementById('most-expensive');
+        if (data.most_expensive_purchase && data.most_expensive_purchase.length > 0) {
+            expensiveDiv.innerHTML = `
+                <ol class="top-list">
+                    ${data.most_expensive_purchase.map(item => `
+                        <li>
+                            <strong>${escapeHtml(item.user.username)}</strong>
+                            <span>${escapeHtml(item.perfume.name)}</span>
+                            <span class="tag">$${item.price.toFixed(2)}</span>
+                        </li>
+                    `).join('')}
+                </ol>
+            `;
+        } else {
+            expensiveDiv.innerHTML = '<p class="empty">No data</p>';
+        }
+
+        // Highest Spent
+        const spentDiv = document.getElementById('highest-spent');
+        if (data.most_expensive_collection && data.most_expensive_collection.length > 0) {
+            spentDiv.innerHTML = `
+                <ol class="top-list">
+                    ${data.most_expensive_collection.map(item => `
+                        <li>
+                            <strong>${escapeHtml(item.user.username)}</strong>
+                            <span class="tag">$${item.total_spent.toFixed(2)}</span>
+                        </li>
+                    `).join('')}
+                </ol>
+            `;
+        } else {
+            spentDiv.innerHTML = '<p class="empty">No data</p>';
+        }
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+{% endblock %}

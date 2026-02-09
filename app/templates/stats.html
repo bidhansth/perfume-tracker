@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Stats - Perfume Tracker{% endblock %}
+
+{% block content %}
+<h1>Collection Statistics</h1>
+
+<div class="stats-grid" id="stats-grid">
+    <p class="loading">Loading statistics...</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (!requireRole(['USER'])) {
+        // Will redirect
+    } else {
+        loadStats();
+    }
+
+    async function loadStats() {
+        try {
+            // Load spending stats
+            const spendingRes = await apiRequest('/stats/spending');
+            // Load perfumes count
+            const perfumesRes = await apiRequest('/perfumes?limit=1');
+            
+            if (spendingRes.ok && perfumesRes.ok) {
+                const spending = await spendingRes.json();
+                const perfumes = await perfumesRes.json();
+                renderStats(spending, perfumes);
+            } else {
+                document.getElementById('stats-grid').innerHTML = '<p class="error">Failed to load statistics</p>';
+            }
+        } catch (err) {
+            document.getElementById('stats-grid').innerHTML = '<p class="error">Failed to load statistics</p>';
+        }
+    }
+
+    function renderStats(spending, perfumes) {
+        const grid = document.getElementById('stats-grid');
+        grid.innerHTML = `
+            <div class="stat-card">
+                <span class="stat-value">${perfumes.total || 0}</span>
+                <span class="stat-label">Total Perfumes</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">${spending.total_purchases || 0}</span>
+                <span class="stat-label">Total Purchases</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">$${(spending.total_spent || 0).toFixed(2)}</span>
+                <span class="stat-label">Total Spent</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">$${(spending.average_price || 0).toFixed(2)}</span>
+                <span class="stat-label">Average Price</span>
+            </div>
+        `;
+    }
+
+</script>
+{% endblock %}
