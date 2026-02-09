@@ -1,7 +1,7 @@
 from typing import Optional, List
-from datetime import date
+from datetime import date as date_type
 from enum import Enum
-from sqlalchemy import String, Float, ForeignKey, Enum as SQLEnum
+from sqlalchemy import String, Float, ForeignKey, Date, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
@@ -31,7 +31,7 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String)
     role: Mapped[Role] = mapped_column(SQLEnum(Role, name="role"), default=Role.USER)
     is_active: Mapped[bool] = mapped_column(default=True)
-    created_at: Mapped[date] = mapped_column(default=date.today)
+    created_at: Mapped[date_type] = mapped_column(Date, default=date_type.today)
 
     perfumes: Mapped[List["Perfume"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
     purchases: Mapped[List["Purchase"]] = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -56,11 +56,10 @@ class Purchase(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     perfume_id: Mapped[int] = mapped_column(ForeignKey("perfumes.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    date: Mapped[date] = mapped_column()
+    date: Mapped[date_type] = mapped_column(Date)
     price: Mapped[float] = mapped_column(Float)
     store: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     ml: Mapped[int] = mapped_column(default=100)
 
     perfume: Mapped["Perfume"] = relationship(back_populates="purchases")
     user: Mapped["User"] = relationship(back_populates="purchases")
-    
