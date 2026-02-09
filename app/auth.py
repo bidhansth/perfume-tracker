@@ -9,17 +9,7 @@ from pydantic_settings import BaseSettings
 
 from app.database import get_db
 from app.models import Role, User
-import os
-
-class Settings(BaseSettings):
-    SECRET_KEY: str
-    ALGORITHM: str
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-
-    class Config:
-        env_file = ".env"
-
-settings = Settings()
+from app.config import settings
 
 SECRET_KEY = settings.SECRET_KEY
 ALGORITHM = settings.ALGORITHM

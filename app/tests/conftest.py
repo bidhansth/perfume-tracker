@@ -5,12 +5,17 @@ from sqlalchemy.orm import sessionmaker
 
 from app.main import app
 from app.database import Base, get_db
+from app.config import settings
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
+TEST_DATABASE_URL = str(settings.DATABASE_URL).replace(
+    settings.DATABASE_URL.path,
+    settings.DATABASE_URL.path + "_test"
+)
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False}
+    TEST_DATABASE_URL,
+    pool_size=5,
+    max_overflow=10,
 )
 
 TestingSessionLocal = sessionmaker(

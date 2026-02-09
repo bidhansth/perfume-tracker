@@ -1,10 +1,14 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from typing import Generator
+from app.config import settings
 
-DATABASE_URL = "sqlite:///perfumes.db"
-
-engine = create_engine(DATABASE_URL, echo=True, future=True)
+engine = create_engine(
+    str(settings.DATABASE_URL),
+    echo=settings.DB_ECHO,
+    pool_size=3,
+    max_overflow=10,
+    future=True)
 
 SessionLocal = sessionmaker(
     bind= engine,
