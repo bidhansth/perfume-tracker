@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
 from typing import Generator
 from app.config import settings
 
@@ -17,7 +17,8 @@ SessionLocal = sessionmaker(
     future= True 
 )
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+    pass
 
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()

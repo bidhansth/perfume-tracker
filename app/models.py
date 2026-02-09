@@ -1,8 +1,8 @@
-from typing import Optional
+from typing import Optional, List
 from datetime import date
 from enum import Enum
-from sqlalchemy import Column, Integer, String, Float, Date, Boolean, ForeignKey, Enum as SQLEnum
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, Float, ForeignKey, Enum as SQLEnum
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .database import Base
 
 class Role(str, Enum):
@@ -25,41 +25,42 @@ class Season(str, Enum):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True, nullable=False)
-    email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
-    role = Column(SQLEnum(Role, name="role"), default=Role.USER, nullable=False)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(Date, default=date.today, nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    username: Mapped[str] = mapped_column(String, unique=True, index=True)
+    email: Mapped[str] = mapped_column(String, unique=True, index=True)
+    hashed_password: Mapped[str] = mapped_column(String)
+    role: Mapped[Role] = mapped_column(SQLEnum(Role, name="role"), default=Role.USER)
+    is_active: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[date] = mapped_column(default=date.today)
 
-    perfumes = relationship("Perfume", back_populates="owner", cascade="all, delete-orphan")
-    purchases = relationship("Purchase", back_populates="user", cascade="all, delete-orphan")
+    perfumes: Mapped[List["Perfume"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
+    purchases: Mapped[List["Purchase"]] = relationship(back_populates="user", cascade="all, delete-orphan")
 
 class Perfume(Base):
     __tablename__ = "perfumes"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
-    brand = Column(String, nullable= False)
-    concentration = Column(SQLEnum(Concentration, name="concentration"), nullable= False)
-    season = Column(SQLEnum(Season, name="season"), nullable= False)
-    available = Column(Boolean, nullable= False, default= True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String)
+    brand: Mapped[str] = mapped_column(String)
+    concentration: Mapped[Concentration] = mapped_column(SQLEnum(Concentration, name="concentration"))
+    season: Mapped[Season] = mapped_column(SQLEnum(Season, name="season"))
+    available: Mapped[bool] = mapped_column(default=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
 
-    owner = relationship("User", back_populates="perfumes")
-    purchases = relationship("Purchase", back_populates= "perfume", cascade="all, delete-orphan")
+    owner: Mapped["User"] = relationship(back_populates="perfumes")
+    purchases: Mapped[List["Purchase"]] = relationship(back_populates="perfume", cascade="all, delete-orphan")
 
 class Purchase(Base):
     __tablename__ = "purchases"
 
-    id = Column(Integer, primary_key=True, index=True)
-    perfume_id = Column(Integer, ForeignKey("perfumes.id"), nullable=False)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    date = Column(Date, nullable=False)
-    price = Column(Float, nullable=False)
-    store = Column(String, nullable=True)
-    ml = Column(Integer, default=100)
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    perfume_id: Mapped[int] = mapped_column(ForeignKey("perfumes.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    date: Mapped[date] = mapped_column()
+    price: Mapped[float] = mapped_column(Float)
+    store: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    ml: Mapped[int] = mapped_column(default=100)
 
-    perfume = relationship("Perfume", back_populates="purchases")
-    user = relationship("User", back_populates="purchases")
+    perfume: Mapped["Perfume"] = relationship(back_populates="purchases")
+    user: Mapped["User"] = relationship(back_populates="purchases")
+    
