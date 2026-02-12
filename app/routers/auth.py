@@ -1,6 +1,7 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -21,11 +22,13 @@ def register_user(
     user_in: UserCreate, 
     db: Session = Depends(get_db)
     ):
-    existing_user = db.query(User).filter(User.username == user_in.username).first()
+    stmt = select(User).where(User.username == user_in.username)
+    existing_user = db.execute(stmt).scalars().first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already registered")
     
-    existing_email = db.query(User).filter(User.email == user_in.email).first()
+    stmt = select(User).where(User.email == user_in.email)
+    existing_email = db.execute(stmt).scalars().first()
     if existing_email:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered")
     
@@ -46,8 +49,8 @@ def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
     ):
-    user = db.query(User).filter(User.username == form_data.username).first()
-
+    stmt = select(User).where(User.username == form_data.username)
+    user = db.execute(stmt).scalars().first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

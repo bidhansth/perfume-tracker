@@ -4,8 +4,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from pydantic_settings import BaseSettings
 
 from app.database import get_db
 from app.models import Role, User
@@ -65,7 +65,9 @@ def get_current_user(
     except JWTError:
         raise credentials_exception
     
-    user = db.query(User).filter(User.username == username).first()
+    # user = db.query(User).filter(User.username == username).first()
+    stmt = select(User).where(User.username == username)
+    user = db.execute(stmt).scalars().first()
     if user is None:
         raise credentials_exception
     user.role = token_role

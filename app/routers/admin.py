@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc
+from sqlalchemy import func, desc, select
 
 from app.database import get_db
 from app.models import User, Perfume, Purchase, Role
@@ -22,11 +22,11 @@ def get_admin_dashboard(
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
     ):
-    total_users: int = db.query(func.count(User.id)).filter(User.role != Role.ADMIN).scalar()
-    total_perfumes: int = db.query(func.count(Perfume.id)).scalar()
-    total_purchases: int = db.query(func.count(Purchase.id)).scalar()
-    total_amount: float = db.query(func.coalesce(func.sum(Purchase.price), 0.0)).scalar()
-    active_users: int = db.query(func.count(User.id)).filter(User.is_active == True).filter(User.role != Role.ADMIN).scalar()
+    total_users: int = db.execute(select(func.count(User.id)).where(User.role != Role.ADMIN)).scalar()
+    total_perfumes: int = db.execute(select(func.count(Perfume.id))).scalar()
+    total_purchases: int = db.execute(select(func.count(Purchase.id))).scalar()
+    total_amount: float = db.execute(select(func.coalesce(func.sum(Purchase.price), 0.0))).scalar()
+    active_users: int = db.execute(select(func.count(User.id)).where(User.is_active == True).where(User.role != Role.ADMIN)).scalar()
 
     return AdminDashboard(
         total_users=total_users or 0,
@@ -42,23 +42,29 @@ def get_top_users(
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
     ):
-    most_perfumes_counts = db.query(User, func.count(Perfume.id).label("perfume_count")).\
-        join(Perfume, User.id == Perfume.user_id).\
-        group_by(User.id).\
-        order_by(desc("perfume_count")).\
-        limit(limit).all()
+    most_perfumes_counts = db.execute(
+        select(User, func.count(Perfume.id).label("perfume_count"))
+        .join(Perfume, User.id == Perfume.user_id)
+        .group_by(User.id)
+        .order_by(desc("perfume_count"))
+        .limit(limit)
+    ).all()
     
-    most_expensive_perfume = db.query(Purchase, Perfume, User).\
-        join(Perfume, Purchase.perfume_id == Perfume.id).\
-        join(User, Purchase.user_id == User.id).\
-        order_by(desc(Purchase.price)).\
-        limit(limit).all()
+    most_expensive_perfume = db.execute(
+        select(Purchase, Perfume, User)
+        .join(Perfume, Purchase.perfume_id == Perfume.id)
+        .join(User, Purchase.user_id == User.id)
+        .order_by(desc(Purchase.price))
+        .limit(limit)
+    ).all()
 
-    most_expensive_collection = db.query(User, func.sum(Purchase.price).label("total_spent")).\
-        join(Purchase, User.id == Purchase.user_id).\
-        group_by(User.id).\
-        order_by(desc("total_spent")).\
-        limit(limit).all()
+    most_expensive_collection = db.execute(
+        select(User, func.sum(Purchase.price).label("total_spent"))
+        .join(Purchase, User.id == Purchase.user_id)
+        .group_by(User.id)
+        .order_by(desc("total_spent"))
+        .limit(limit)
+    ).all()
 
     return TopUsersResponse(
         most_perfumes=[
@@ -90,7 +96,7 @@ def list_users(
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
 ):
-    users = db.query(User).all()
+    users = db.execute(select(User)).scalars().all()
     return users
 
 
@@ -101,7 +107,8 @@ def update_user(
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
 ):
-    user = db.query(User).filter(User.id == user_id).first()
+    
+    user = db.execute(select(User).where(User.id == user_id)).scalars().first()
     if not user:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="User not found")
