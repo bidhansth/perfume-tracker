@@ -53,7 +53,7 @@
                 <ol class="top-list">
                     ${data.most_perfumes.map(item => `
                         <li>
-                            <strong>${escapeHtml(item.user.username)}</strong>
+                            <strong>${escapeHtml(item.user.email)}</strong>
                             <span class="tag">${item.perfume_count} perfumes</span>
                         </li>
                     `).join('')}
@@ -70,7 +70,7 @@
                 <ol class="top-list">
                     ${data.most_expensive_purchase.map(item => `
                         <li>
-                            <strong>${escapeHtml(item.user.username)}</strong>
+                            <strong>${escapeHtml(item.user.email)}</strong>
                             <span>${escapeHtml(item.perfume.name)}</span>
                             <span class="tag">$${item.price.toFixed(2)}</span>
                         </li>
@@ -88,7 +88,7 @@
                 <ol class="top-list">
                     ${data.most_expensive_collection.map(item => `
                         <li>
-                            <strong>${escapeHtml(item.user.username)}</strong>
+                            <strong>${escapeHtml(item.user.email)}</strong>
                             <span class="tag">$${item.total_spent.toFixed(2)}</span>
                         </li>
                     `).join('')}

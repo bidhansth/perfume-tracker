@@ -12,7 +12,6 @@
         <thead>
             <tr>
                 <th>ID</th>
-                <th>Username</th>
                 <th>Email</th>
                 <th>Role</th>
                 <th>Status</th>
@@ -59,7 +58,6 @@
         tbody.innerHTML = users.map(u => `
             <tr>
                 <td>${u.id}</td>
-                <td>${escapeHtml(u.username)}</td>
                 <td>${escapeHtml(u.email)}</td>
                 <td><span class="tag ${u.role === 'ADMIN' ? 'tag-admin' : ''}">${u.role}</span></td>
                 <td>${u.is_active ? '✓ Active' : '✗ Inactive'}</td>

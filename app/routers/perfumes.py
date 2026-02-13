@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Literal, Optional
 from sqlalchemy import asc, desc, func, select
 
@@ -11,9 +11,9 @@ from app.schemas import PerfumeCreate, PerfumeRead, PurchaseRead, PaginatedRespo
 router = APIRouter(prefix="/perfumes", tags=["Perfumes"])
 
 @router.post("", response_model=PerfumeRead, status_code=status.HTTP_201_CREATED)
-def create_perfume(
+async def create_perfume(
     perfume_in: PerfumeCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
     perfume = Perfume(
@@ -26,12 +26,12 @@ def create_perfume(
     )
 
     db.add(perfume)
-    db.commit()
-    db.refresh(perfume)
+    await db.commit()
+    await db.refresh(perfume)
     return perfume
 
 @router.get("", response_model=PaginatedResponse[PerfumeRead])
-def list_perfumes(
+async def list_perfumes(
     available: Optional[bool] = Query(None),
     concentration: Optional[str] = Query(None),
     season: Optional[str] = Query(None),
@@ -40,7 +40,7 @@ def list_perfumes(
     order: Literal["asc", "desc"] = Query("asc"),
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
 
@@ -56,7 +56,8 @@ def list_perfumes(
         stmt = stmt.where(Perfume.brand.ilike(f"%{brand}%"))
 
     count_stmt = select(func.count()).select_from(stmt.subquery())
-    total = db.execute(count_stmt).scalar_one()
+    result = await db.execute(count_stmt)
+    total = result.scalar_one()
 
     allowed_sort_fields = {"name": Perfume.name, "brand": Perfume.brand}
     if sort_by:
@@ -70,7 +71,8 @@ def list_perfumes(
         stmt = stmt.order_by(column.asc() if order == "asc" else column.desc())
 
     stmt = stmt.offset(offset).limit(limit)
-    items = db.execute(stmt).scalars().all()
+    result = await db.execute(stmt)
+    items = result.scalars().all()
 
     return {
         "total": total,
@@ -80,13 +82,14 @@ def list_perfumes(
     }
 
 @router.get("/{perfume_id}", response_model=PerfumeRead)
-def get_perfume(
+async def get_perfume(
     perfume_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
     stmt = select(Perfume).where(Perfume.id == perfume_id)
-    perfume = db.execute(stmt).scalars().first()
+    result = await db.execute(stmt)
+    perfume = result.scalars().first()
 
     if not perfume:
         raise HTTPException(
@@ -103,13 +106,14 @@ def get_perfume(
     return perfume
 
 @router.get("/{perfume_id}/purchases", response_model=List[PurchaseRead])
-def get_perfume_purchases(
+async def get_perfume_purchases(
     perfume_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
     stmt = select(Perfume).where(Perfume.id == perfume_id)
-    perfume = db.execute(stmt).scalars().first()
+    result = await db.execute(stmt)
+    perfume = result.scalars().first()
 
     if not perfume:
         raise HTTPException(

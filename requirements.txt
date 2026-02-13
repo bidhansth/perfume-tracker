@@ -13,9 +13,13 @@ starlette
 typing-inspection
 typing_extensions
 uvicorn
-psycopg2-binary
+asyncpg
+httpx
 pydantic-settings
 jinja2
 python-multipart
 python-jose[cryptography]
 passlib[bcrypt]
+itsdangerous
+pytest-asyncio
+greenlet

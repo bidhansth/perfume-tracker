@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, Query, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, desc, select
 
 from app.database import get_db
@@ -18,15 +18,15 @@ from app.auth import get_current_admin_user
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 @router.get("/stats/dashboard", response_model=AdminDashboard)
-def get_admin_dashboard(
-    db: Session = Depends(get_db),
+async def get_admin_dashboard(
+    db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
     ):
-    total_users: int = db.execute(select(func.count(User.id)).where(User.role != Role.ADMIN)).scalar()
-    total_perfumes: int = db.execute(select(func.count(Perfume.id))).scalar()
-    total_purchases: int = db.execute(select(func.count(Purchase.id))).scalar()
-    total_amount: float = db.execute(select(func.coalesce(func.sum(Purchase.price), 0.0))).scalar()
-    active_users: int = db.execute(select(func.count(User.id)).where(User.is_active == True).where(User.role != Role.ADMIN)).scalar()
+    total_users = (await db.execute(select(func.count(User.id)).where(User.role != Role.ADMIN))).scalar()
+    total_perfumes = (await db.execute(select(func.count(Perfume.id)))).scalar()
+    total_purchases = (await db.execute(select(func.count(Purchase.id)))).scalar()
+    total_amount = (await db.execute(select(func.coalesce(func.sum(Purchase.price), 0.0)))).scalar()
+    active_users = (await db.execute(select(func.count(User.id)).where(User.is_active == True).where(User.role != Role.ADMIN))).scalar()
 
     return AdminDashboard(
         total_users=total_users or 0,
@@ -37,34 +37,37 @@ def get_admin_dashboard(
     )
 
 @router.get("/stats/top-users", response_model=TopUsersResponse)
-def get_top_users(
+async def get_top_users(
     limit: int = Query(3, ge=1, le=10, description="Number of top users to return"),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
     ):
-    most_perfumes_counts = db.execute(
+    most_perfumes_result = await db.execute(
         select(User, func.count(Perfume.id).label("perfume_count"))
         .join(Perfume, User.id == Perfume.user_id)
         .group_by(User.id)
         .order_by(desc("perfume_count"))
         .limit(limit)
-    ).all()
+    )
+    most_perfumes_counts = most_perfumes_result.all()
     
-    most_expensive_perfume = db.execute(
+    most_expensive_result = await db.execute(
         select(Purchase, Perfume, User)
         .join(Perfume, Purchase.perfume_id == Perfume.id)
         .join(User, Purchase.user_id == User.id)
         .order_by(desc(Purchase.price))
         .limit(limit)
-    ).all()
+    )
+    most_expensive_perfume = most_expensive_result.all()
 
-    most_expensive_collection = db.execute(
+    most_collection_result = await db.execute(
         select(User, func.sum(Purchase.price).label("total_spent"))
         .join(Purchase, User.id == Purchase.user_id)
         .group_by(User.id)
         .order_by(desc("total_spent"))
         .limit(limit)
-    ).all()
+    )
+    most_expensive_collection = most_collection_result.all()
 
     return TopUsersResponse(
         most_perfumes=[
@@ -92,25 +95,25 @@ def get_top_users(
 
 
 @router.get("/users", response_model=list[UserRead])
-def list_users(
-    db: Session = Depends(get_db),
+async def list_users(
+    db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
 ):
-    users = db.execute(select(User)).scalars().all()
+    result = await db.execute(select(User))
+    users = result.scalars().all()
     return users
 
 
 @router.patch("/users/{user_id}", response_model=UserRead)
-def update_user(
+async def update_user(
     user_id: int,
     user_update: dict,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin_user)
 ):
-    
-    user = db.execute(select(User).where(User.id == user_id)).scalars().first()
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
     if not user:
-        from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="User not found")
     
     if "is_active" in user_update:
@@ -118,6 +121,6 @@ def update_user(
     if "role" in user_update:
         user.role = Role(user_update["role"])
     
-    db.commit()
-    db.refresh(user)
+    await db.commit()
+    await db.refresh(user)
     return user

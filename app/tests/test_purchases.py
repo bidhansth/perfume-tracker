@@ -1,6 +1,9 @@
-def test_create_purchase(client):
+import pytest
+
+@pytest.mark.asyncio
+async def test_create_purchase(client):
     # First create a perfume to reference
-    perfume_response = client.post(
+    perfume_response = await client.post(
         "/perfumes",
         json={
             "name": "Test Perfume",
@@ -12,7 +15,7 @@ def test_create_purchase(client):
     )
     perfume_id = perfume_response.json()["id"]
     
-    response = client.post(
+    response = await client.post(
         "/purchases",
         json={
             "perfume_id": perfume_id,
@@ -25,8 +28,9 @@ def test_create_purchase(client):
 
     assert response.status_code == 201
 
-def test_purchase_invalid_perfume(client):
-    response = client.post(
+@pytest.mark.asyncio
+async def test_purchase_invalid_perfume(client):
+    response = await client.post(
         "/purchases",
         json={
             "perfume_id": 9999,

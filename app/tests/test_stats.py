@@ -1,5 +1,8 @@
-def test_spending_stats(client):
-    response = client.get("/stats/spending")
+import pytest
+
+@pytest.mark.asyncio
+async def test_spending_stats(client):
+    response = await client.get("/stats/spending")
     assert response.status_code == 200
 
     data = response.json()

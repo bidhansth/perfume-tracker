@@ -1,5 +1,8 @@
-def test_create_perfume(client):
-    response = client.post(
+import pytest
+
+@pytest.mark.asyncio
+async def test_create_perfume(client):
+    response = await client.post(
         "/perfumes",
         json={
             "name": "Bleu de Chanel",
@@ -15,8 +18,9 @@ def test_create_perfume(client):
     assert data["name"] == "Bleu de Chanel"
     assert data["brand"] == "Chanel"
 
-def test_list_perfumes(client):
-    response = client.get("/perfumes")
+@pytest.mark.asyncio
+async def test_list_perfumes(client):
+    response = await client.get("/perfumes")
     assert response.status_code == 200
 
     data = response.json()

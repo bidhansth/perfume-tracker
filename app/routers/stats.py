@@ -1,7 +1,7 @@
 from typing import List, Optional
 from datetime import date
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import func, desc, select
 
 from app.auth import get_current_active_user
@@ -11,10 +11,10 @@ from app.models import Purchase, Perfume, User
 router = APIRouter(prefix="/stats", tags=["Stats"])
 
 @router.get("/spending")
-def spending_stats(
+async def spending_stats(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
 
@@ -31,18 +31,19 @@ def spending_stats(
     if start_date and end_date and start_date > end_date:
         raise HTTPException(status_code=400, detail="Start date cannot be after end date")
 
-    result = db.execute(stmt).one()
+    result = await db.execute(stmt)
+    row = result.one()
 
     return {
-        "total_spent": result.total_spent or 0,
-        "total_purchases": result.total_purchases or 0,
-        "average_price": round(result.average_price,2) if result.average_price else 0
+        "total_spent": row.total_spent or 0,
+        "total_purchases": row.total_purchases or 0,
+        "average_price": round(row.average_price,2) if row.average_price else 0
     }
 
 @router.get("/most_expensive")
-def most_expensive(
+async def most_expensive(
     num : Optional[int] = Query(5, ge=1),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
 
@@ -51,7 +52,8 @@ def most_expensive(
         where(Purchase.user_id == current_user.id).\
         order_by(desc(Purchase.price)).\
         limit(num)
-    most_expensive = db.execute(stmt).all()
+    result = await db.execute(stmt)
+    most_expensive = result.all()
 
     
     return [

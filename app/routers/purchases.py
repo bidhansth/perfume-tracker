@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional
 from datetime import date
 
@@ -12,13 +12,14 @@ from app.schemas import PurchaseCreate, PurchaseRead, PaginatedResponse
 router = APIRouter(prefix="/purchases", tags=["Purchases"])
 
 @router.post("", response_model=PurchaseRead, status_code=status.HTTP_201_CREATED)
-def create_purchase(
+async def create_purchase(
     purchase_in: PurchaseCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
     stmt = select(Perfume).where(Perfume.id == purchase_in.perfume_id)
-    perfume = db.execute(stmt).scalars().first()
+    result = await db.execute(stmt)
+    perfume = result.scalars().first()
 
     if not perfume:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfume not found")
@@ -39,20 +40,20 @@ def create_purchase(
     )
 
     db.add(purchase)
-    db.commit()
-    db.refresh(purchase)
+    await db.commit()
+    await db.refresh(purchase)
 
     return purchase
 
 @router.get("", response_model=PaginatedResponse[PurchaseRead])
-def list_purchases(
+async def list_purchases(
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
     min_price: Optional[float] = Query(None, ge=0),
     max_price: Optional[float] = Query(None, ge=0),
     limit: int = Query(10, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
 
@@ -73,9 +74,11 @@ def list_purchases(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Minimum price cannot be greater than maximum price")
     
     total_stmt = select(func.count()).select_from(stmt.subquery())
-    total = db.execute(total_stmt).scalar_one()
+    result = await db.execute(total_stmt)
+    total = result.scalar_one()
 
-    items = db.execute(stmt.offset(offset).limit(limit)).scalars().all()
+    result = await db.execute(stmt.offset(offset).limit(limit))
+    items = result.scalars().all()
 
     return {
         "total": total,
@@ -85,13 +88,14 @@ def list_purchases(
     }
 
 @router.get("/{purchase_id}", response_model=PurchaseRead)
-def get_purchase(
+async def get_purchase(
     purchase_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
     stmt = select(Purchase).where(Purchase.id == purchase_id)
-    purchase = db.execute(stmt).scalar_one()
+    result = await db.execute(stmt)
+    purchase = result.scalar_one_or_none()
 
     if not purchase:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase not found")
@@ -104,13 +108,14 @@ def get_purchase(
     return purchase
 
 @router.delete("/{purchase_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_purchase(
+async def delete_purchase(
     purchase_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
     ):
     stmt = select(Purchase).where(Purchase.id == purchase_id)
-    purchase = db.execute(stmt).scalar_one()
+    result = await db.execute(stmt)
+    purchase = result.scalar_one_or_none()
 
     if not purchase:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Purchase not found")
@@ -121,7 +126,7 @@ def delete_purchase(
             detail="Not authorized to delete this purchase"
         )
     
-    db.delete(purchase)
-    db.commit()
+    await db.delete(purchase)
+    await db.commit()
 
     return purchase
